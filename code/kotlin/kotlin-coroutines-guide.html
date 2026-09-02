@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kotlin 协程常见用法整理</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121933;
+      --panel-2: #182142;
+      --text: #e9eefc;
+      --muted: #a7b2d8;
+      --line: #2a376b;
+      --accent: #7aa2ff;
+      --accent-2: #89ddff;
+      --good: #6ee7b7;
+      --warn: #fbbf24;
+      --code: #0a0f1f;
+      --shadow: 0 16px 48px rgba(0,0,0,.28);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(122,162,255,.12), transparent 32%),
+        radial-gradient(circle at left top, rgba(137,221,255,.10), transparent 28%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(24,33,66,.95), rgba(18,25,51,.92));
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    h1,h2,h3 { margin: 0 0 12px; line-height: 1.25; }
+    h1 { font-size: clamp(30px, 5vw, 46px); }
+    h2 {
+      font-size: 28px;
+      margin-top: 8px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(122,162,255,.22);
+    }
+    h3 { font-size: 20px; color: #f3f6ff; }
+    p { margin: 0 0 14px; color: var(--muted); }
+    strong { color: var(--text); }
+
+    .subtitle {
+      max-width: 860px;
+      font-size: 17px;
+      color: #c7d2f4;
+      margin-top: 10px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(122,162,255,.28);
+      background: rgba(122,162,255,.08);
+      color: #dbe7ff;
+      font-size: 13px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 18px;
+      background: rgba(18,25,51,.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .toc h3 { font-size: 18px; margin-bottom: 12px; }
+    .toc a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 8px 10px;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      transition: .18s ease;
+    }
+    .toc a:hover { background: rgba(122,162,255,.12); color: var(--text); }
+
+    .section {
+      background: linear-gradient(180deg, rgba(18,25,51,.95), rgba(12,17,34,.96));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .card {
+      background: rgba(255,255,255,.025);
+      border: 1px solid rgba(137,221,255,.10);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .card p:last-child, .note p:last-child, .tip p:last-child { margin-bottom: 0; }
+
+    .label {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: #d8e6ff;
+      border-radius: 999px;
+      background: rgba(137,221,255,.10);
+      border: 1px solid rgba(137,221,255,.18);
+    }
+
+    pre {
+      margin: 14px 0;
+      padding: 16px;
+      overflow: auto;
+      border-radius: 14px;
+      background: var(--code);
+      border: 1px solid rgba(122,162,255,.16);
+      color: #dbe7ff;
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    code {
+      font-family: "Cascadia Code", Consolas, monospace;
+    }
+
+    .note, .tip, .warn {
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin: 14px 0;
+      border: 1px solid transparent;
+    }
+
+    .note {
+      background: rgba(122,162,255,.08);
+      border-color: rgba(122,162,255,.18);
+    }
+    .tip {
+      background: rgba(110,231,183,.08);
+      border-color: rgba(110,231,183,.16);
+    }
+    .warn {
+      background: rgba(251,191,36,.09);
+      border-color: rgba(251,191,36,.18);
+    }
+
+    ul { margin: 10px 0 0 18px; color: var(--muted); }
+    li { margin-bottom: 8px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid rgba(122,162,255,.16);
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(122,162,255,.10);
+      vertical-align: top;
+    }
+    th {
+      background: rgba(122,162,255,.08);
+      color: #edf3ff;
+      font-weight: 700;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    .footer {
+      text-align: center;
+      color: #93a1cd;
+      padding-top: 6px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 920px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .hero, .section { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>Kotlin 协程常见用法整理</h1>
+      <p class="subtitle">
+        这份文档不追求把所有 API 全背下来，而是帮你建立一个“什么时候用什么”的实际心智模型。
+        重点放在 Android / 后端开发里最常见、最容易混淆、最值得掌握的协程用法。
+      </p>
+      <div class="chips">
+        <span class="chip">suspend</span>
+        <span class="chip">launch / async</span>
+        <span class="chip">withContext</span>
+        <span class="chip">作用域管理</span>
+        <span class="chip">取消与异常</span>
+        <span class="chip">Flow</span>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="toc">
+        <h3>目录</h3>
+        <a href="#mindset">1. 先建立协程思维</a>
+        <a href="#start">2. 怎么启动协程</a>
+        <a href="#suspend">3. suspend 到底是什么</a>
+        <a href="#context">4. 线程切换与 withContext</a>
+        <a href="#scope">5. coroutineScope / supervisorScope</a>
+        <a href="#job">6. Job、取消、超时</a>
+        <a href="#exception">7. 异常处理</a>
+        <a href="#flow">8. Flow 常见用法</a>
+        <a href="#android">9. Android 里怎么落地</a>
+        <a href="#pitfalls">10. 最常见误区</a>
+        <a href="#channel">11. Channel 常见用法</a>
+        <a href="#checklist">12. 一页速查表</a>
+      </aside>
+
+      <main>
+        <section class="section" id="mindset">
+          <h2>1. 先建立协程思维</h2>
+          <p>很多人卡协程，不是因为 API 不会背，而是脑子里还在用“线程”理解一切。协程更适合这样理解：</p>
+          <div class="grid-2">
+            <div class="card">
+              <span class="label">你要先知道</span>
+              <ul>
+                <li><strong>协程不是线程</strong>，它是更轻量的异步任务单位。</li>
+                <li><strong>suspend 不是开新线程</strong>，而是“这个函数可以挂起，稍后恢复”。</li>
+                <li><strong>协程最核心的问题</strong>不是并发，而是把异步代码写得像同步代码一样清楚。</li>
+              </ul>
+            </div>
+            <div class="card">
+              <span class="label">你要形成的直觉</span>
+              <ul>
+                <li>需要执行一个异步任务：考虑 <code>launch</code> 或 <code>async</code></li>
+                <li>需要返回结果：优先想 <code>suspend</code> / <code>withContext</code></li>
+                <li>需要并发等待多个结果：考虑 <code>async + await</code></li>
+                <li>需要持续产出数据：考虑 <code>Flow</code></li>
+              </ul>
+            </div>
+          </div>
+          <div class="note">
+            <p><strong>一句话：</strong> 协程是“异步流程的组织方式”。你真正要掌握的是结构化并发，而不是只会写几个 builder。</p>
+          </div>
+        </section>
+
+        <section class="section" id="start">
+          <h2>2. 怎么启动协程</h2>
+          <h3>2.1 launch：只关心执行，不关心返回值</h3>
+          <p>适合“做一件事”，例如刷新 UI、发请求后更新状态、写日志、启动后台任务。</p>
+          <pre><code>viewModelScope.launch {
+    val user = repository.loadUser()
+    _uiState.value = UiState.Success(user)
+}</code></pre>
+          <div class="tip">
+            <p><strong>记法：</strong> <code>launch</code> = 发射一个任务，重点是“去执行”。返回的是 <code>Job</code>，不是结果。</p>
+          </div>
+
+          <h3>2.2 async：需要并发计算并拿结果</h3>
+          <p>适合“最终要拿值回来”的场景，返回 <code>Deferred&lt;T&gt;</code>，通过 <code>await()</code> 获取结果。</p>
+          <pre><code>coroutineScope {
+    val userDeferred = async { repository.loadUser() }
+    val postDeferred = async { repository.loadPosts() }
+
+    val user = userDeferred.await()
+    val posts = postDeferred.await()
+    UiModel(user, posts)
+}</code></pre>
+          <div class="warn">
+            <p><strong>别滥用：</strong> 如果只是顺序执行并返回一个值，很多时候直接写 <code>suspend</code> 函数就够了，不需要上来就 <code>async</code>。</p>
+          </div>
+
+          <h3>2.3 runBlocking：桥接阻塞世界</h3>
+          <p>常用于测试、main 函数、脚本入口。它会阻塞当前线程，直到协程体执行结束。</p>
+          <pre><code>fun main() = runBlocking {
+    val result = repository.loadUser()
+    println(result)
+}</code></pre>
+          <div class="warn">
+            <p><strong>Android 里不要乱用：</strong> 尤其不要在主线程、点击事件、ViewModel 正常业务代码里用 <code>runBlocking</code>。</p>
+          </div>
+        </section>
+
+        <section class="section" id="suspend">
+          <h2>3. suspend 到底是什么</h2>
+          <p><code>suspend</code> 不是“异步版函数”这么简单，它表达的是：这个函数可以在执行过程中挂起，但不会阻塞线程。</p>
+          <pre><code>suspend fun loadUserProfile(userId: String): UserProfile {
+    val user = api.getUser(userId)
+    val posts = api.getPosts(userId)
+    return UserProfile(user, posts)
+}</code></pre>
+          <div class="grid-2">
+            <div class="card">
+              <span class="label">它适合干什么</span>
+              <ul>
+                <li>网络请求</li>
+                <li>数据库读取</li>
+                <li>需要等待结果的 IO 操作</li>
+                <li>一串异步步骤的顺序编排</li>
+              </ul>
+            </div>
+            <div class="card">
+              <span class="label">它不代表什么</span>
+              <ul>
+                <li>不代表自动切线程</li>
+                <li>不代表自动并行</li>
+                <li>不代表一定更快</li>
+                <li>不代表能随便在任何地方调用</li>
+              </ul>
+            </div>
+          </div>
+          <div class="note">
+            <p><strong>最重要的一点：</strong> <code>suspend</code> 只是说明“这个函数可挂起”，真正在哪个线程跑，取决于调用它的协程上下文以及你是否用了 <code>withContext</code>。</p>
+          </div>
+        </section>
+
+        <section class="section" id="context">
+          <h2>4. 线程切换与 withContext</h2>
+          <h3>4.1 withContext：最常见也最实用</h3>
+          <p>当你需要明确切到某个 dispatcher 执行一段代码时，用 <code>withContext</code>。</p>
+          <pre><code>suspend fun readCache(): String = withContext(Dispatchers.IO) {
+    file.readText()
+}</code></pre>
+          <p>它很适合包装 IO、数据库、文件操作，让调用方继续用“同步顺序”的方式写代码。</p>
+
+          <h3>4.2 常见 Dispatcher 怎么理解</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Dispatcher</th>
+                <th>适用场景</th>
+                <th>注意点</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Dispatchers.Main</code></td>
+                <td>Android 主线程、更新 UI</td>
+                <td>不要做耗时任务</td>
+              </tr>
+              <tr>
+                <td><code>Dispatchers.IO</code></td>
+                <td>网络、数据库、文件读写</td>
+                <td>最常用的后台 dispatcher</td>
+              </tr>
+              <tr>
+                <td><code>Dispatchers.Default</code></td>
+                <td>CPU 密集型计算</td>
+                <td>如排序、解析、复杂计算</td>
+              </tr>
+              <tr>
+                <td><code>Dispatchers.Unconfined</code></td>
+                <td>少数特殊场景</td>
+                <td>日常业务基本别用</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>4.3 一个非常常见的写法</h3>
+          <pre><code>viewModelScope.launch {
+    _uiState.value = UiState.Loading
+
+    val result = withContext(Dispatchers.IO) {
+        repository.fetchData()
+    }
+
+    _uiState.value = UiState.Success(result)
+}</code></pre>
+          <div class="tip">
+            <p><strong>记法：</strong> 外层 <code>launch</code> 负责流程，内层 <code>withContext</code> 负责切线程做重活。</p>
+          </div>
+        </section>
+
+        <section class="section" id="scope">
+          <h2>5. coroutineScope / supervisorScope</h2>
+          <h3>5.1 coroutineScope：子任务是“一荣俱荣，一损俱损”</h3>
+          <pre><code>suspend fun loadPage(): PageData = coroutineScope {
+    val banner = async { api.loadBanner() }
+    val list = async { api.loadList() }
+    PageData(banner.await(), list.await())
+}</code></pre>
+          <p>如果其中一个子协程失败，整个 scope 会失败，其他子协程也会被取消。</p>
+
+          <h3>5.2 supervisorScope：一个孩子挂了，不拖死兄弟</h3>
+          <pre><code>suspend fun loadWidgets(): WidgetState = supervisorScope {
+    val weather = async { runCatching { api.loadWeather() }.getOrNull() }
+    val news = async { runCatching { api.loadNews() }.getOrNull() }
+    WidgetState(weather.await(), news.await())
+}</code></pre>
+          <p>适合“局部失败可接受”的页面拼装场景，比如多个卡片并发加载，坏一个不影响全部。</p>
+
+          <div class="grid-2">
+            <div class="card">
+              <span class="label">coroutineScope</span>
+              <p>更严格。适合多个子任务必须共同成功的情况。</p>
+            </div>
+            <div class="card">
+              <span class="label">supervisorScope</span>
+              <p>更宽松。适合部分失败可容忍的情况。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="job">
+          <h2>6. Job、取消、超时</h2>
+          <h3>6.1 Job：协程的生命周期句柄</h3>
+          <pre><code>val job = scope.launch {
+    repeat(100) {
+        delay(500)
+        println("working $it")
+    }
+}
+
+job.cancel()</code></pre>
+          <p>拿到 <code>Job</code>，你就可以取消、join、检查状态。</p>
+
+          <h3>6.2 协程取消是“协作式”的</h3>
+          <p>意思是：协程代码需要跑到可取消点，或者主动检查取消状态，取消才会生效。</p>
+          <pre><code>scope.launch {
+    while (isActive) {
+        doSmallWork()
+    }
+}</code></pre>
+          <div class="warn">
+            <p><strong>常见坑：</strong> 纯 CPU 死循环里不检查 <code>isActive</code>、不调用挂起函数，协程可能不响应取消。</p>
+          </div>
+
+          <h3>6.3 join / cancelAndJoin</h3>
+          <pre><code>val job = scope.launch { ... }
+job.join() // 等待执行完
+
+job.cancelAndJoin() // 先取消，再等待结束</code></pre>
+
+          <h3>6.4 超时控制</h3>
+          <pre><code>val result = withTimeout(3_000) {
+    api.fetchData()
+}
+
+val nullableResult = withTimeoutOrNull(3_000) {
+    api.fetchData()
+}</code></pre>
+          <p><code>withTimeout</code> 超时会抛异常，<code>withTimeoutOrNull</code> 超时则返回 null。</p>
+        </section>
+
+        <section class="section" id="exception">
+          <h2>7. 异常处理</h2>
+          <h3>7.1 最常见的方式：try-catch</h3>
+          <pre><code>viewModelScope.launch {
+    try {
+        val data = repository.fetchData()
+        _uiState.value = UiState.Success(data)
+    } catch (e: Exception) {
+        _uiState.value = UiState.Error(e.message ?: "unknown error")
+    }
+}</code></pre>
+
+          <h3>7.2 CoroutineExceptionHandler 适合兜底，不适合替代业务处理</h3>
+          <pre><code>val handler = CoroutineExceptionHandler { _, throwable ->
+    logError(throwable)
+}
+
+scope.launch(handler) {
+    riskyTask()
+}</code></pre>
+          <div class="note">
+            <p><strong>经验上：</strong> 页面状态、接口失败、重试提示，这些业务异常还是尽量在具体协程里 <code>try-catch</code> 处理。<code>CoroutineExceptionHandler</code> 更像最后一层兜底。</p>
+          </div>
+
+          <h3>7.3 launch 和 async 的异常感受不一样</h3>
+          <ul>
+            <li><code>launch</code> 里的异常更像“直接抛出来”。</li>
+            <li><code>async</code> 里的异常通常会在 <code>await()</code> 时暴露。</li>
+          </ul>
+          <pre><code>val deferred = scope.async {
+    error("boom")
+}
+
+try {
+    deferred.await()
+} catch (e: Exception) {
+    println("catch: ${e.message}")
+}</code></pre>
+        </section>
+
+        <section class="section" id="flow">
+          <h2>8. Flow 常见用法</h2>
+          <p>当数据不是“一次性结果”，而是“持续发射的一串值”时，Flow 就很合适。</p>
+
+          <h3>8.1 最基础：定义与 collect</h3>
+          <pre><code>fun tickerFlow() = flow {
+    repeat(5) {
+        emit(it)
+        delay(1000)
+    }
+}
+
+viewModelScope.launch {
+    tickerFlow().collect { value ->
+        println(value)
+    }
+}</code></pre>
+
+          <h3>8.2 像集合一样变换</h3>
+          <pre><code>repository.userFlow()
+    .filter { it.isActive }
+    .map { it.name }
+    .collect { name ->
+        println(name)
+    }</code></pre>
+
+          <h3>8.3 常见操作符</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>操作符</th>
+                <th>用途</th>
+                <th>典型场景</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>map</code></td>
+                <td>转换数据</td>
+                <td>DTO -> UI Model</td>
+              </tr>
+              <tr>
+                <td><code>filter</code></td>
+                <td>筛选数据</td>
+                <td>只保留合法状态</td>
+              </tr>
+              <tr>
+                <td><code>debounce</code></td>
+                <td>防抖</td>
+                <td>搜索框输入</td>
+              </tr>
+              <tr>
+                <td><code>distinctUntilChanged</code></td>
+                <td>去掉重复值</td>
+                <td>避免重复刷新 UI</td>
+              </tr>
+              <tr>
+                <td><code>flatMapLatest</code></td>
+                <td>只关心最新请求</td>
+                <td>联想搜索、切换条件查询</td>
+              </tr>
+              <tr>
+                <td><code>combine</code></td>
+                <td>组合多个流</td>
+                <td>表单状态汇总</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>8.4 StateFlow / SharedFlow 怎么记</h3>
+          <div class="grid-2">
+            <div class="card">
+              <span class="label">StateFlow</span>
+              <ul>
+                <li>有当前值</li>
+                <li>适合表示 UI 状态</li>
+                <li>新订阅者会立即收到最新值</li>
+              </ul>
+            </div>
+            <div class="card">
+              <span class="label">SharedFlow</span>
+              <ul>
+                <li>更像广播事件流</li>
+                <li>适合一次性事件、消息分发</li>
+                <li>是否重放由配置决定</li>
+              </ul>
+            </div>
+          </div>
+
+          <pre><code>private val _uiState = MutableStateFlow(UiState())
+val uiState: StateFlow&lt;UiState&gt; = _uiState
+
+private val _events = MutableSharedFlow&lt;UiEvent&gt;()
+val events = _events.asSharedFlow()</code></pre>
+        </section>
+
+        <section class="section" id="android">
+          <h2>9. Android 里怎么落地</h2>
+          <h3>9.1 ViewModel 里：优先用 viewModelScope</h3>
+          <pre><code>class UserViewModel(
+    private val repository: UserRepository
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(UserUiState())
+    val uiState = _uiState.asStateFlow()
+
+    fun load() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(loading = true)
+            try {
+                val user = withContext(Dispatchers.IO) {
+                    repository.loadUser()
+                }
+                _uiState.value = UserUiState(user = user, loading = false)
+            } catch (e: Exception) {
+                _uiState.value = UserUiState(error = e.message, loading = false)
+            }
+        }
+    }
+}</code></pre>
+
+          <h3>9.2 生命周期相关：优先用 lifecycleScope / repeatOnLifecycle</h3>
+          <pre><code>lifecycleScope.launch {
+    repeatOnLifecycle(Lifecycle.State.STARTED) {
+        viewModel.uiState.collect { state ->
+            render(state)
+        }
+    }
+}</code></pre>
+          <p>这样页面不可见时会自动停止收集，可见时再恢复，避免无意义工作和泄漏。</p>
+
+          <h3>9.3 Repository 层常见姿势</h3>
+          <pre><code>class UserRepository(
+    private val api: UserApi,
+    private val dao: UserDao
+) {
+    suspend fun loadUser(): User = withContext(Dispatchers.IO) {
+        dao.getUser() ?: api.getUser().also { dao.save(it) }
+    }
+}</code></pre>
+          <div class="tip">
+            <p><strong>推荐分层习惯：</strong> UI 层负责启动协程，Repository 层提供 <code>suspend</code> / <code>Flow</code> 能力，线程切换尽量收口在明确的位置。</p>
+          </div>
+        </section>
+
+        <section class="section" id="pitfalls">
+          <h2>10. 最常见误区</h2>
+          <div class="grid-2">
+            <div class="card">
+              <h3>误区 1：suspend = 后台线程</h3>
+              <p>错。<code>suspend</code> 不负责切线程，切线程要靠上下文或 <code>withContext</code>。</p>
+            </div>
+            <div class="card">
+              <h3>误区 2：async 比 suspend 高级</h3>
+              <p>错。<code>async</code> 主要解决“并发 + 取结果”，不是所有返回值场景都该用它。</p>
+            </div>
+            <div class="card">
+              <h3>误区 3：哪里都能 GlobalScope.launch</h3>
+              <p>错。它容易脱离生命周期，很多时候会带来难管的任务和泄漏风险。</p>
+            </div>
+            <div class="card">
+              <h3>误区 4：取消就是立刻停止</h3>
+              <p>错。取消是协作式的，需要挂起点或主动检查取消状态。</p>
+            </div>
+            <div class="card">
+              <h3>误区 5：Flow 就是 LiveData 替代品</h3>
+              <p>不完全对。Flow 是更通用的异步数据流模型，不只是 UI 观察工具。</p>
+            </div>
+            <div class="card">
+              <h3>误区 6：异常只要加 handler 就行</h3>
+              <p>错。业务异常处理还是要回到具体协程逻辑里。</p>
+            </div>
+          </div>
+        </section>
+
+
+        <section class="section" id="channel">
+          <h2>11. Channel 常见用法</h2>
+          <p>如果说 Flow 更像“持续的数据流”，那 Channel 更像“协程之间传消息的管道”。你可以把它先理解成一个协程安全的队列：一边 <code>send</code>，另一边 <code>receive</code>。</p>
+
+          <h3>11.1 最基础的 send / receive</h3>
+          <pre><code>val channel = Channel&lt;Int&gt;()
+
+launch {
+    channel.send(1)
+    channel.send(2)
+    channel.close()
+}
+
+launch {
+    for (value in channel) {
+        println(value)
+    }
+}</code></pre>
+          <div class="tip">
+            <p><strong>记法：</strong> Channel 主要解决“协程和协程之间怎么传东西”。</p>
+          </div>
+
+          <h3>11.2 为什么很多人会把它和 Flow 搞混</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>对比项</th>
+                <th>Channel</th>
+                <th>Flow</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>核心定位</td>
+                <td>协程间通信、任务队列、事件传递</td>
+                <td>异步数据流、响应式处理</td>
+              </tr>
+              <tr>
+                <td>使用方式</td>
+                <td><code>send / receive</code></td>
+                <td><code>emit / collect</code></td>
+              </tr>
+              <tr>
+                <td>典型场景</td>
+                <td>生产者-消费者、任务分发</td>
+                <td>状态流、搜索流、数据变换链</td>
+              </tr>
+              <tr>
+                <td>更像什么</td>
+                <td>队列 / 管道</td>
+                <td>流 / 序列 / 响应式流</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="note">
+            <p><strong>实战判断：</strong> 如果你主要在“表达状态变化”或“做一连串流式变换”，优先 Flow；如果你在“传递消息”或“排队消费任务”，Channel 更顺手。</p>
+          </div>
+
+          <h3>11.3 三种你最常见的 Channel 形态</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>类型</th>
+                <th>特点</th>
+                <th>适合场景</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Channel()</code></td>
+                <td>默认 rendezvous，无缓冲；send 和 receive 要彼此配合</td>
+                <td>严格一发一收</td>
+              </tr>
+              <tr>
+                <td><code>Channel(capacity = N)</code></td>
+                <td>带缓冲区</td>
+                <td>生产速度可能大于消费速度</td>
+              </tr>
+              <tr>
+                <td><code>Channel.CONFLATED</code></td>
+                <td>只保留最新值，旧值会被覆盖</td>
+                <td>只关心最新事件/状态</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <pre><code>val buffered = Channel&lt;String&gt;(capacity = 10)
+val conflated = Channel&lt;Int&gt;(Channel.CONFLATED)</code></pre>
+
+          <h3>11.4 生产者-消费者是它最经典的用法</h3>
+          <pre><code>val taskChannel = Channel&lt;String&gt;(capacity = 20)
+
+launch {
+    listOf("a", "b", "c").forEach { taskChannel.send(it) }
+    taskChannel.close()
+}
+
+repeat(2) {
+    launch {
+        for (task in taskChannel) {
+            println("consume: $task")
+        }
+    }
+}</code></pre>
+          <p>这类模式在下载队列、上报队列、后台任务分发里很常见。</p>
+
+          <h3>11.5 receiveCatching 比 receive 更稳</h3>
+          <pre><code>when (val result = channel.receiveCatching()) {
+    is ChannelResult.Success -> println(result.getOrNull())
+    else -> println("channel closed")
+}</code></pre>
+          <p>当你不确定 channel 是否已经关闭时，这种写法更安全。</p>
+
+          <h3>11.6 produce / actor 要不要学</h3>
+          <p><code>produce</code> 和 <code>actor</code> 是基于 Channel 的封装思路：</p>
+          <ul>
+            <li><code>produce</code>：更偏“创建一个不断产出数据的协程”</li>
+            <li><code>actor</code>：更偏“创建一个串行处理消息的协程”</li>
+          </ul>
+          <p>但在现在实际业务里，很多场景已经被 Flow、SharedFlow、StateFlow 覆盖，所以你可以先把核心精力放在 Channel 本体和 Flow 的边界上。</p>
+
+          <h3>11.7 Android / Compose 里怎么用它更合适</h3>
+          <ul>
+            <li>如果是 <strong>页面状态</strong>：优先 <code>StateFlow</code></li>
+            <li>如果是 <strong>一次性 UI 事件</strong>：通常优先 <code>SharedFlow</code>，有时也会用 Channel</li>
+            <li>如果是 <strong>后台任务排队</strong>：Channel 很合适</li>
+          </ul>
+          <div class="warn">
+            <p><strong>别一上来就用 Channel 做所有事件分发。</strong> 在 Android UI 层，很多时候 <code>SharedFlow</code> 更自然；Channel 更适合明显的“收发消息 / 队列消费”模型。</p>
+          </div>
+
+          <h3>11.8 你刚才那个疑问，最适合这样记</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>类型</th>
+                <th>多个观察者都能收到吗</th>
+                <th>会不会保留最新值</th>
+                <th>消息会不会被“消费掉”</th>
+                <th>最适合</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>StateFlow</code></td>
+                <td>会</td>
+                <td>会，永远有一个当前值</td>
+                <td>不会按“消费一次就没了”理解</td>
+                <td>页面状态、UI state</td>
+              </tr>
+              <tr>
+                <td><code>SharedFlow</code></td>
+                <td>会</td>
+                <td>看 replay 配置</td>
+                <td>通常不是单消费者模型</td>
+                <td>广播事件、多个订阅者</td>
+              </tr>
+              <tr>
+                <td><code>Channel</code></td>
+                <td>通常不是</td>
+                <td>默认不强调“保留最新状态”</td>
+                <td>会，更像消息被某个消费者拿走</td>
+                <td>单消费消息、任务队列、生产者消费者</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="note">
+            <p><strong>把它们想象成三种完全不同的东西：</strong></p>
+            <ul>
+              <li><strong>StateFlow</strong>：公告栏，所有人都能看到当前最新内容</li>
+              <li><strong>SharedFlow</strong>：广播喇叭，广播出去后，正在听的人都能听见</li>
+              <li><strong>Channel</strong>：传送带/队列，一个包裹通常只会被一个人拿走</li>
+            </ul>
+          </div>
+
+          <h3>11.9 一个最容易记住的例子</h3>
+          <pre><code>// StateFlow: 多个地方都能看到当前状态
+val state = MutableStateFlow("idle")
+
+// SharedFlow: 一个事件可以广播给多个正在收听的人
+val events = MutableSharedFlow&lt;String&gt;()
+
+// Channel: 一条消息通常只会被一个消费者拿到
+val channel = Channel&lt;String&gt;()</code></pre>
+
+          <div class="warn">
+            <p><strong>所以你的那句话可以修正成：</strong> “Flow 家族里，<code>StateFlow</code> 和 <code>SharedFlow</code> 更偏多观察者；而 <code>Channel</code> 更偏单条消息被单个消费者拿走。” 这样理解就比较准确了。</p>
+          </div>
+        </section>
+
+        <section class="section" id="checklist">
+          <h2>12. 一页速查表</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>需求</th>
+                <th>优先考虑</th>
+                <th>一句理解</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>启动一个不关心返回值的任务</td>
+                <td><code>launch</code></td>
+                <td>去做这件事</td>
+              </tr>
+              <tr>
+                <td>并发执行并拿多个结果</td>
+                <td><code>async + await</code></td>
+                <td>并发算，最后取值</td>
+              </tr>
+              <tr>
+                <td>封装一个可等待结果的异步函数</td>
+                <td><code>suspend fun</code></td>
+                <td>把异步流程写成顺序代码</td>
+              </tr>
+              <tr>
+                <td>切到 IO / Default 做事</td>
+                <td><code>withContext</code></td>
+                <td>明确切线程跑一段代码</td>
+              </tr>
+              <tr>
+                <td>多个子任务必须一起成功</td>
+                <td><code>coroutineScope</code></td>
+                <td>一个失败，整体失败</td>
+              </tr>
+              <tr>
+                <td>多个子任务允许部分失败</td>
+                <td><code>supervisorScope</code></td>
+                <td>失败隔离</td>
+              </tr>
+              <tr>
+                <td>控制生命周期</td>
+                <td><code>Job</code></td>
+                <td>可以取消、等待、跟踪状态</td>
+              </tr>
+              <tr>
+                <td>限制最长执行时间</td>
+                <td><code>withTimeout</code></td>
+                <td>超过时间就中断</td>
+              </tr>
+              <tr>
+                <td>持续发射数据</td>
+                <td><code>Flow</code></td>
+                <td>异步数据流</td>
+              </tr>
+              <tr>
+                <td>表示页面状态</td>
+                <td><code>StateFlow</code></td>
+                <td>永远有一个最新值</td>
+              </tr>
+              <tr>
+                <td>发送一次性事件</td>
+                <td><code>SharedFlow</code></td>
+                <td>更像广播事件</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="note">
+            <p><strong>最后给你的抓手：</strong> 如果你总觉得协程乱，先只抓住 4 个高频组合：</p>
+            <ul>
+              <li><code>viewModelScope.launch { ... }</code></li>
+              <li><code>suspend fun ...</code></li>
+              <li><code>withContext(Dispatchers.IO) { ... }</code></li>
+              <li><code>Flow / StateFlow collect</code></li>
+            </ul>
+            <p>先把这四个用顺，再去扩展并发、取消、异常传播、冷流热流这些更进阶的话题，会容易很多。</p>
+          </div>
+        </section>
+
+        <div class="footer">
+          Kotlin 协程常见用法整理 · 适合从“知道 API”过渡到“知道什么时候该用什么”
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
