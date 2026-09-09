@@ -23,7 +23,8 @@
 14. Notification
 15. SystemUI
 16. 多用户 / DevicePolicy
-17. Media / Audio / Camera
+17. Media 显示 / Camera
+18. Audio
 ```
 
 这个顺序的核心逻辑是：先理解系统怎么启动、服务怎么通过 Binder 通信、线程消息怎么调度；再理解包、进程、Activity 和四大组件；然后理解窗口、显示、输入；最后扩展到权限、后台、系统 UI、多用户和媒体。
@@ -251,11 +252,17 @@ Input 管触摸和按键如何送到窗口。
 
 对应文档：`多用户机制详解-从UserManager到DevicePolicy.md`
 
-### 6.4 Media / Audio / Camera
+### 6.4 Media 显示 / Camera
 
-解释视频、相机、音频和 SurfaceFlinger/HWC 的连接。
+解释视频、相机和 SurfaceFlinger/HWC 的连接。
 
 对应文档：`Media显示机制详解-从MediaCodec到SurfaceFlinger.md`
+
+### 6.5 Audio
+
+解释播放、录音、混音、音频焦点、音量和路由策略。
+
+对应文档：`Audio机制详解-从AudioTrack到AudioFlinger和AudioPolicy.md`
 
 ---
 

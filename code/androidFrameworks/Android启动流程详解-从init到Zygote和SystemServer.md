@@ -6,16 +6,18 @@
 
 ## 目录
 
-1. [Android 启动总览](#1android-启动总览)
-2. [init 进程](#2init-进程)
-3. [Zygote 是什么](#3zygote-是什么)
-4. [SystemServer 是什么](#4systemserver-是什么)
-5. [SystemServiceManager 和启动阶段](#5systemservicemanager-和启动阶段)
-6. [PMS、AMS、WMS 等服务如何启动](#6pmsamswms-等服务如何启动)
-7. [开机广播和 Launcher 启动](#7开机广播和-launcher-启动)
-8. [常见问题与排查](#8常见问题与排查)
-9. [第三方系统常见修改点](#9第三方系统常见修改点)
-10. [源码路径速查](#10源码路径速查)
+- [Android 启动流程详解：从 init 到 Zygote 和 SystemServer](#android-启动流程详解从-init-到-zygote-和-systemserver)
+  - [目录](#目录)
+  - [1. Android 启动总览](#1-android-启动总览)
+  - [2. init 进程](#2-init-进程)
+  - [3. Zygote 是什么](#3-zygote-是什么)
+  - [4. SystemServer 是什么](#4-systemserver-是什么)
+  - [5. SystemServiceManager 和启动阶段](#5-systemservicemanager-和启动阶段)
+  - [6. PMS、AMS、WMS 等服务如何启动](#6-pmsamswms-等服务如何启动)
+  - [7. 开机广播和 Launcher 启动](#7-开机广播和-launcher-启动)
+  - [8. 常见问题与排查](#8-常见问题与排查)
+  - [9. 第三方系统常见修改点](#9-第三方系统常见修改点)
+  - [10. 源码路径速查](#10-源码路径速查)
 
 ---
 
