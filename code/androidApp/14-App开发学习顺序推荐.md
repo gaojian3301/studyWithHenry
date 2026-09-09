@@ -20,9 +20,10 @@
 11. Gradle 构建与工程化
 12. 测试与质量保障
 13. 常见业务能力专题
+14. App 编译配置文件详解
 ```
 
-第 14 篇就是当前这篇路线图。
+第 14 篇就是当前这篇路线图，第 15 篇可以作为 Gradle 配置文件的专项补充。
 
 ---
 
@@ -189,6 +190,8 @@ Compose 是新项目主力 UI 方案。
 
 对应文档：`11-Gradle构建与工程化.md`
 
+补充阅读：`15-App编译配置文件详解.md`
+
 ### 6.2 测试与质量保障
 
 重点掌握：
@@ -238,6 +241,8 @@ Compose 是新项目主力 UI 方案。
 | App 启动慢 | 02 + 10 + Framework 启动流程 |
 | ANR | 01 + 02 + 10 + Framework AMS/Input |
 | release 崩溃 debug 正常 | 11 + 12 |
+| 看不懂 build.gradle.kts/settings.gradle.kts | 15 + 11 |
+| 依赖或插件解析失败 | 15 + 11 |
 | WebView 安全问题 | 08 + 13 |
 | 音视频有声无画 | 13 + Framework Media/SurfaceFlinger |
 
