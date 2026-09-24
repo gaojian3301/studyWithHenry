@@ -16,15 +16,16 @@
 7. Service / Broadcast / ContentProvider
 8. WMS
 9. SurfaceFlinger
-10. Input
-11. Permission / AppOps
-12. Power
-13. Alarm / JobScheduler
-14. Notification
-15. SystemUI
-16. 多用户 / DevicePolicy
-17. Media 显示 / Camera
-18. Audio
+10. 图形渲染：HWUI / RenderThread / GPU 上屏
+11. Input
+12. Permission / AppOps
+13. Power
+14. Alarm / JobScheduler
+15. Notification
+16. SystemUI
+17. 多用户 / DevicePolicy
+18. 相机与媒体编解码
+19. Audio
 ```
 
 这个顺序的核心逻辑是：先理解系统怎么启动、服务怎么通过 Binder 通信、线程消息怎么调度；再理解包、进程、Activity 和四大组件；然后理解窗口、显示、输入；最后扩展到权限、后台、系统 UI、多用户和媒体。
@@ -194,7 +195,22 @@ SurfaceFlinger 管图层合成和上屏。
 
 对应文档：`SurfaceFlinger机制详解-从Buffer到屏幕合成.md`
 
-### 4.3 Input
+### 4.3 图形渲染：HWUI / RenderThread / GPU 上屏
+
+SurfaceFlinger 讲的是**合成端**（Buffer 到屏幕）。这一段补上它前面的**绘制端**：App 说"我要画"之后，绘制指令怎么产生、怎么变成 GPU 命令、怎么进 BufferQueue。
+
+重点理解：
+
+- 三个线程与两个世界：UI 线程 / RenderThread / SurfaceFlinger，CPU 绘制与 GPU 渲染的边界。
+- VSYNC 与 Choreographer 的几类 callback、frame deadline。
+- DisplayList（RenderNode）与硬件加速的失效场景。
+- Skia 后端（GL / Vulkan）与 Bitmap 上传成本。
+- BufferQueue 状态机与三级缓冲。
+- 掉帧按轨归因：UI 线程慢 / RenderThread 慢 / SF 侧 / 送显侧。
+
+对应文档：`图形渲染机制详解-从HWUI到GPU上屏.md`
+
+### 4.4 Input
 
 Input 管触摸和按键如何送到窗口。
 
@@ -207,6 +223,21 @@ Input 管触摸和按键如何送到窗口。
 - Input ANR。
 
 对应文档：`Input机制详解-从触摸事件到InputDispatcher分发.md`
+
+### 4.5 多屏与多窗口：DisplayManager / VirtualDisplay / 车机 OccupantZone
+
+11_WMS 讲的是单屏内的窗口管理，这一篇把维度换成"多块屏 + 屏内多窗口"。车机多屏（仪表 / 中控 / 副驾）直接看第 11 节车机专章。
+
+重点理解：
+
+- Display 的两个视角：App 侧 `Display` 与 WMS 侧 `DisplayContent`，displayId 分配。
+- 屏幕从哪来：Built-in / VirtualDisplay / 模拟副屏。
+- Presentation、`ActivityOptions.setLaunchDisplayId` 与 Activity 跨屏迁移。
+- 多窗口四形态：分屏 / freeform / PiP / Activity Embedding，及 WMShell 与 TaskOrganizer 的"调度 vs UI"分离。
+- 跨屏输入与焦点、per-display SystemUI（衔接 18 篇第 16 节）。
+- 车机 OccupantZone：zone ↔ Display ↔ userId 的三方绑定。
+
+对应文档：`23_多屏与多窗口机制详解-从DisplayManager到CarOccupantZone.md`
 
 ---
 
@@ -252,11 +283,11 @@ Input 管触摸和按键如何送到窗口。
 
 对应文档：`多用户机制详解-从UserManager到DevicePolicy.md`
 
-### 6.4 Media 显示 / Camera
+### 6.4 相机与媒体编解码
 
-解释视频、相机和 SurfaceFlinger/HWC 的连接。
+解释一帧图像、一段视频的完整流水线：Camera2 / CameraX 与 Camera HAL3 / CameraService、预览拍照录像三条输出路径、MediaCodec 与 Codec2、封装与播放（Media3 / ExoPlayer），以及与 SurfaceFlinger 的衔接。
 
-对应文档：`Media显示机制详解-从MediaCodec到SurfaceFlinger.md`
+对应文档：`相机与媒体编解码详解-从CameraHAL到MediaCodec与上屏.md`
 
 ### 6.5 Audio
 
