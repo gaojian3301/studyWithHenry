@@ -26,6 +26,15 @@
             android:exported="false"
             android:label="Android Lifecycle 常见用法：Activity、Compose 与协程结合"
             android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".binder.AidlActivity"
+            android:exported="false"
+            android:label="AIDL Demo"
+            android:windowSoftInputMode="adjustResize" />
+        <service
+            android:name=".binder.AidlRemoteService"
+            android:exported="false"
+            android:process=":remote" />
 
     </application>
 

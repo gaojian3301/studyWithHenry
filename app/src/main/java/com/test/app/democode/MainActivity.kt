@@ -21,6 +21,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.test.app.democode.binder.AidlActivity
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,6 +56,9 @@ private fun ActivityListScreen() {
         Spacer(modifier = Modifier.height(16.dp))
         ActivityListItem(title = "android-lifecycle-activity-compose-coroutines-guide") {
             context.startActivity(Intent(context, LifecycleComposeActivity::class.java))
+        }
+        ActivityListItem(title = "AIDL remote service demo") {
+            context.startActivity(Intent(context, AidlActivity::class.java))
         }
     }
 }
