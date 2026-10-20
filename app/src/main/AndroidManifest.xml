@@ -31,11 +31,16 @@
             android:exported="false"
             android:label="AIDL Demo"
             android:windowSoftInputMode="adjustResize" />
+
         <service
             android:name=".binder.AidlRemoteService"
             android:exported="false"
             android:process=":remote" />
 
+        <activity
+            android:name=".architecture.ArchActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>
