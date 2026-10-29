@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.test.app.democode.architecture.ArchActivity
 import com.test.app.democode.binder.AidlActivity
+import com.test.app.democode.handler.HandlerActivity
+import com.test.app.democode.pms.PmsActivity
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +65,12 @@ private fun ActivityListScreen() {
         }
         ActivityListItem(title = "Arch demo") {
             context.startActivity(Intent(context, ArchActivity::class.java))
+        }
+        ActivityListItem(title = "消息机制详解：从 Looper 到 Handler 和 Choreographer") {
+            context.startActivity(Intent(context, HandlerActivity::class.java))
+        }
+        ActivityListItem(title = "PMS 机制：应用列表、Intent、安装与卸载") {
+            context.startActivity(Intent(context, PmsActivity::class.java))
         }
     }
 }

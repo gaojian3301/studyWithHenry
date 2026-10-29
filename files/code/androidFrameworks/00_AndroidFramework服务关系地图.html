@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Android Framework 服务关系地图 · 文档导航</title>
+<style>
+  :root{
+    --bg:#0f1115; --surface:#171a21; --surface2:#1e222b;
+    --border:#2a2f3a; --ink:#e8eaed; --ink2:#aab0bb; --ink3:#6b7280;
+    --accent:#4f8cff; --accent-dim:#2f5fd0;
+    /* 分组色 */
+    --c-core:#f59e0b;   /* framework 核心机制 琥珀 */
+    --c-display:#38bdf8;/* 显示/输入/媒体 天蓝 */
+    --c-sys:#22c55e;    /* androidOthers 系统 绿 */
+    --c-car:#f43f5e;    /* automotive 车载 玫红 */
+    --c-app:#c084fc;    /* 应用层 紫 */
+    --c-base:#94a3b8;   /* 基础机制 灰蓝 */
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1200px;margin:0 auto;padding:24px 20px 80px}
+
+  /* Header */
+  .hero{padding:28px 0 20px;border-bottom:1px solid var(--border);margin-bottom:26px}
+  .hero h1{margin:0 0 6px;font-size:28px;font-weight:700}
+  .hero .sub{color:var(--ink2);font-size:14px;max-width:760px}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .lg{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2);padding:5px 10px;background:var(--surface);border:1px solid var(--border);border-radius:20px}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+
+  .section{margin:38px 0 12px;display:flex;align-items:center;gap:12px}
+  .section h2{margin:0;font-size:21px;font-weight:700}
+  .section .tag{font-size:12px;color:var(--ink3);background:var(--surface);border:1px solid var(--border);padding:2px 9px;border-radius:12px}
+  .hint{color:var(--ink3);font-size:13px;margin:0 0 14px}
+
+  /* 分层架构 */
+  .layers{display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .layer{display:flex;align-items:stretch;border-bottom:1px solid var(--border)}
+  .layer:last-child{border-bottom:none}
+  .layer .label{flex:0 0 170px;padding:14px 14px;display:flex;flex-direction:column;justify-content:center;gap:2px;font-size:13px;font-weight:600;border-right:1px solid var(--border)}
+  .layer .label small{font-weight:400;color:var(--ink3);font-size:11px}
+  .layer .cells{flex:1;display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;align-content:center}
+  .cell{font-size:12px;color:var(--ink2);background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;cursor:pointer;transition:.12s}
+  .cell:hover{background:var(--surface);color:var(--ink);transform:translateY(-1px)}
+  .cell b{display:block;font-size:12px;color:var(--ink)}
+  .cell .f{font-size:10px;color:var(--ink3);margin-top:3px}
+  .arrow-row{text-align:center;color:var(--ink3);font-size:18px;padding:2px 0}
+
+  /* 核心链路拓扑 */
+  .chain{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+  .chain .title{font-size:13px;color:var(--ink2);margin-bottom:8px}
+  .chain .title b{color:var(--ink)}
+  .flow{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+  .node{font-size:12px;padding:7px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:.12s}
+  .node:hover{transform:translateY(-1px);border-color:var(--accent)}
+  .node small{display:block;font-size:10px;color:var(--ink3)}
+  .flow .arr{color:var(--ink3);font-size:14px}
+  .flow .arr b{color:var(--ink3);font-weight:400}
+
+  /* 卡片矩阵 */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;border-left:3px solid var(--b,#444)}
+  .card .h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .card .h .num{font-size:11px;color:var(--ink3);white-space:nowrap}
+  .card h3{margin:0;font-size:14px;line-height:1.4}
+  .card .svc{margin-top:8px;font-size:12px;color:var(--ink2)}
+  .card .svc b{color:var(--accent);font-weight:600}
+  .card .links{margin-top:10px;font-size:11px;color:var(--ink3)}
+  .card .links a{font-size:11px}
+  .card .sum{margin-top:8px;font-size:12px;color:var(--ink3)}
+
+  /* 反查表 */
+  table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:13px}
+  th,td{border-bottom:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--surface2);color:var(--ink2);font-weight:600;font-size:12px}
+  tr:last-child td{border-bottom:none}
+  td .p{color:var(--ink3);font-size:11px}
+
+  /* 交互提示 */
+  .tip{font-size:12px;color:var(--ink3);margin-top:8px}
+
+  @media (max-width:640px){ .layer{flex-direction:column} .layer .label{border-right:none;border-bottom:1px solid var(--border);flex:auto} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>Android Framework 服务关系地图</h1>
+    <p class="sub">把本目录 23 篇 Framework 文档 + <code>androidOthers/</code> 系统篇 + <code>automotive/</code> 车载篇 串成一张可点可查的关系网。核心思路来自 <a href="AndroidFramework学习顺序推荐.md">学习顺序推荐</a>：<b>从 App 现象到系统服务</b>。</p>
+    <div class="legend">
+      <span class="lg"><span class="dot" style="background:var(--c-core)"></span>Framework 核心机制（01–10）</span>
+      <span class="lg"><span class="dot" style="background:var(--c-display)"></span>显示 · 输入 · 媒体（11–23）</span>
+      <span class="lg"><span class="dot" style="background:var(--c-sys)"></span>androidOthers 系统篇</span>
+      <span class="lg"><span class="dot" style="background:var(--c-car)"></span>automotive 车载篇</span>
+      <span class="lg"><span class="dot" style="background:var(--c-app)"></span>androidApp 应用层</span>
+    </div>
+  </header>
+
+  <!-- ================= 1. 分层架构 ================= -->
+  <div class="section"><h2>① 分层架构总览</h2><span class="tag">自下而上 · 点卡片跳转对应文档</span></div>
+  <p class="hint">一张图看懂：应用 → system_server 各服务 → Native/HAL → 车载扩展。每一块都是"上层请求、下层实现"的关系。</p>
+  <div class="layers">
+    <div class="layer">
+      <div class="label" style="color:var(--c-app)">应用层<small>App 进程</small></div>
+      <div class="cells">
+        <div class="cell" onclick="location.href='AndroidFramework学习顺序推荐.md'"><b>四大组件</b><span class="f">Activity / Service / Broadcast / Provider</span></div>
+        <div class="cell" onclick="location.href='../androidApp/02-Android应用组件与生命周期.md'"><b>应用生命周期</b><span class="f">androidApp/02</span></div>
+        <div class="cell" onclick="location.href='../androidApp/09-后台任务与系统限制.md'"><b>后台任务</b><span class="f">androidApp/09</span></div>
+      </div>
+    </div>
+    <div class="arrow-row">▼ &nbsp;Binder / AIDL 跨进程&nbsp;▼</div>
+    <div class="layer">
+      <div class="label" style="color:var(--c-core)">Framework<small>system_server 进程</small></div>
+      <div class="cells">
+        <div class="cell" onclick="location.href='04_PMS机制详解-从App列表到安装卸载流程.md'"><b>PMS</b><span class="f">包 · 权限 · 安装</span></div>
+        <div class="cell" onclick="location.href='05_AMS机制详解-从App现象理解系统调度.md'"><b>AMS</b><span class="f">进程 · 组件调度</span></div>
+        <div class="cell" onclick="location.href='10_ATMS机制详解-从startActivity到任务栈调度.md'"><b>ATMS</b><span class="f">Activity · 任务栈</span></div>
+        <div class="cell" onclick="location.href='11_WMS机制详解-从窗口添加到显示管理.md'"><b>WMS</b><span class="f">窗口 · 层级 · 焦点</span></div>
+        <div class="cell" onclick="location.href='14_权限机制详解-从Permission到AppOps.md'"><b>Permission/AppOps</b><span class="f">权限判定</span></div>
+        <div class="cell" onclick="location.href='15_Power机制详解-从WakeLock到Doze后台限制.md'"><b>Power</b><span class="f">电源 · Doze</span></div>
+        <div class="cell" onclick="location.href='16_后台任务机制详解-从Alarm到JobScheduler.md'"><b>Alarm/JobScheduler</b><span class="f">后台调度</span></div>
+        <div class="cell" onclick="location.href='17_通知机制详解-从NotificationManagerService到SystemUI展示.md'"><b>NMS</b><span class="f">通知</span></div>
+        <div class="cell" onclick="location.href='19_多用户机制详解-从UserManager到DevicePolicy.md'"><b>UserManager/DPMS</b><span class="f">多用户</span></div>
+      </div>
+    </div>
+    <div class="arrow-row">▼ &nbsp;Binder / native&nbsp;▼</div>
+    <div class="layer">
+      <div class="label" style="color:var(--c-display)">Native / HAL<small>独立进程</small></div>
+      <div class="cells">
+        <div class="cell" onclick="location.href='12_SurfaceFlinger机制详解-从Buffer到屏幕合成.md'"><b>SurfaceFlinger</b><span class="f">图层合成 · 上屏</span></div>
+        <div class="cell" onclick="location.href='13_Input机制详解-从触摸事件到InputDispatcher分发.md'"><b>InputManager</b><span class="f">输入分发</span></div>
+        <div class="cell" onclick="location.href='21_Audio机制详解-从AudioTrack到AudioFlinger和AudioPolicy.md'"><b>AudioFlinger/Policy</b><span class="f">音频</span></div>
+        <div class="cell" onclick="location.href='20_相机与媒体编解码详解-从CameraHAL到MediaCodec与上屏.md'"><b>Camera / Codec2</b><span class="f">相机 · 编解码</span></div>
+        <div class="cell" onclick="location.href='../androidOthers/Android虚拟机详解-从Dalvik到ART与代码形态演变.md'"><b>ART</b><span class="f">虚拟机</span></div>
+        <div class="cell" onclick="location.href='../androidOthers/AndroidSELinux机制详解-从策略到系统加固.md'"><b>SELinux</b><span class="f">安全策略</span></div>
+      </div>
+    </div>
+    <div class="arrow-row">▼ &nbsp;HAL / AIDL&nbsp;▼</div>
+    <div class="layer">
+      <div class="label" style="color:var(--c-car)">车载扩展<small>AAOS</small></div>
+      <div class="cells">
+        <div class="cell" onclick="location.href='../automotive/01-AAOS整体架构与CarService.md'"><b>CarService</b><span class="f">automotive/01</span></div>
+        <div class="cell" onclick="location.href='../automotive/03-VehicleHAL-VHAL详解.md'"><b>VHAL</b><span class="f">车辆属性 HAL</span></div>
+        <div class="cell" onclick="location.href='../automotive/02-CarPropertyManager与VehicleProperty.md'"><b>CarPropertyManager</b><span class="f">automotive/02</span></div>
+        <div class="cell" onclick="location.href='23_多屏与多窗口机制详解-从DisplayManager到CarOccupantZone.md'"><b>CarOccupantZone</b><span class="f">23 篇 · 屏↔用户↔座舱</span></div>
+        <div class="cell" onclick="location.href='../androidOthers/Android车载总线详解-从CAN到SOME-IP与车辆网络.md'"><b>CAN / SOME-IP</b><span class="f">车辆网络</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 2. 核心服务链路 ================= -->
+  <div class="section"><h2>② 核心服务协作链路</h2><span class="tag">一条主线</span></div>
+  <p class="hint">一次 App 界面从"请求"到"上屏"，以及用户"触摸"回到 App，走的正是这一条链。</p>
+
+  <div class="chain">
+    <div class="title">▸ <b>界面启动链路</b>（startActivity → 上屏）</div>
+    <div class="flow">
+      <span class="node" onclick="location.href='10_ATMS机制详解-从startActivity到任务栈调度.md'">ATMS<small>决定 Activity/Task/生命周期</small></span><span class="arr">▶</span>
+      <span class="node" onclick="location.href='05_AMS机制详解-从App现象理解系统调度.md'">AMS<small>确保进程存在 · OOM/ANR</small></span><span class="arr">▶</span>
+      <span class="node" onclick="location.href='11_WMS机制详解-从窗口添加到显示管理.md'">WMS<small>加窗口 · 层级 · 焦点 · Insets</small></span><span class="arr">▶</span>
+      <span class="node" onclick="location.href='12_SurfaceFlinger机制详解-从Buffer到屏幕合成.md'">SurfaceFlinger<small>合成 Layer · VSYNC · 上屏</small></span>
+    </div>
+    <div class="title" style="margin-top:12px">▸ <b>输入回传链路</b>（触摸 → 回到 App 处理）</div>
+    <div class="flow">
+      <span class="node" onclick="location.href='13_Input机制详解-从触摸事件到InputDispatcher分发.md'">InputReader/Dispatcher<small>读事件 · 决定给谁</small></span><span class="arr">▶</span>
+      <span class="node" onclick="location.href='11_WMS机制详解-从窗口添加到显示管理.md'">WMS 焦点窗口<small>触摸命中</small></span><span class="arr">▶</span>
+      <span class="node" onclick="location.href='03_消息机制详解-从Looper到Handler和Choreographer.md'">Looper/Handler<small>事件回调进 App 主线程</small></span><span class="arr">▶</span>
+      <span class="node" onclick="location.href='22_图形渲染机制详解-从HWUI到GPU上屏.md'">HWUI/RenderThread<small>重绘 → BufferQueue</small></span><span class="arr">▶</span>
+      <span class="node" onclick="location.href='12_SurfaceFlinger机制详解-从Buffer到屏幕合成.md'">SurfaceFlinger<small>重新合成上屏</small></span>
+    </div>
+  </div>
+
+  <!-- ================= 3. 篇际交叉引用网络 ================= -->
+  <div class="section"><h2>③ 各篇文档的关系网络</h2><span class="tag">每一篇卡片 = 核心服务 + 它指向谁</span></div>
+  <p class="hint">这是本目录真正的"骨架"：每个服务不是孤立的，靠 Binder + 消息 + 状态机协作。下面每张卡片列出该篇的核心类，以及它在文档体系里<em>引用/衔接</em>了哪些姊妹篇（可点击跳转）。</p>
+
+  <!-- 阶段一：基础机制 -->
+  <div class="section" style="margin-bottom:8px"><h2 style="font-size:16px">阶段一 · 系统启动 / 跨进程 / 线程调度</h2></div>
+  <div class="grid">
+    <div class="card" style="--b:var(--c-base)">
+      <div class="h"><h3>启动流程 init→Zygote→SystemServer</h3><span class="num">01</span></div>
+      <div class="svc"><b>核心：</b>init · Zygote · SystemServer · SystemServiceManager · servicemanager</div>
+      <div class="sum">系统服务从哪来：三阶段装配 bootstrap/core/other。</div>
+      <div class="links">衔接 → <a href="02_Binder机制详解-从AIDL到Framework.md">02 Binder</a> · <a href="04_PMS机制详解-从App列表到安装卸载流程.md">04 PMS</a> · <a href="05_AMS机制详解-从App现象理解系统调度.md">05 AMS</a> · <a href="11_WMS机制详解-从窗口添加到显示管理.md">11 WMS</a> · <a href="18_SystemUI机制详解-从状态栏到锁屏与通知面板.md">18 SystemUI</a> · <a href="08_Broadcast机制详解-从sendBroadcast到广播队列分发.md">08 广播</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-base)">
+      <div class="h"><h3>Binder / AIDL</h3><span class="num">02</span></div>
+      <div class="svc"><b>核心：</b>Binder · IBinder · Parcel · ServiceManager · Binder 线程池 · DeadObject</div>
+      <div class="sum">一切 Framework 跨进程通信的地基。</div>
+      <div class="links">衔接 → <a href="01_Android启动流程详解-从init到Zygote和SystemServer.md">01 启动</a> · <a href="09_ContentProvider机制详解-从ContentResolver到跨进程数据访问.md">09 Provider</a> · <a href="../androidOthers/AndroidNDK与JNI详解-从跨语言调用到so加载与Native崩溃排查.md">NDK(native版)</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-base)">
+      <div class="h"><h3>消息机制 Looper/Handler/Choreographer</h3><span class="num">03</span></div>
+      <div class="svc"><b>核心：</b>Looper · MessageQueue · Handler · Choreographer · VSYNC · ANR</div>
+      <div class="sum">App 主线程与各服务内部调度的引擎。</div>
+      <div class="links">衔接 → <a href="22_图形渲染机制详解-从HWUI到GPU上屏.md">22 渲染</a> · <a href="13_Input机制详解-从触摸事件到InputDispatcher分发.md">13 Input</a> · <a href="05_AMS机制详解-从App现象理解系统调度.md">05/06 AMS</a> · <a href="../androidOthers/Android虚拟机详解-从Dalvik到ART与代码形态演变.md">虚拟机</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-base)">
+      <div class="h"><h3>Android 虚拟机 ART</h3><span class="num">others</span></div>
+      <div class="svc"><b>核心：</b>ART · Dalvik · dex/oat · boot image · GC</div>
+      <div class="sum">Zygote 预加载与运行时形态。</div>
+      <div class="links">衔接 → <a href="01_Android启动流程详解-从init到Zygote和SystemServer.md">01 启动</a> · <a href="03_消息机制详解-从Looper到Handler和Choreographer.md">03 消息</a> · <a href="05_AMS机制详解-从App现象理解系统调度.md">05 AMS</a> · <a href="../androidOthers/AndroidNDK与JNI详解-从跨语言调用到so加载与Native崩溃排查.md">NDK</a></div>
+    </div>
+  </div>
+
+  <!-- 阶段二：四大组件与调度 -->
+  <div class="section" style="margin:26px 0 8px"><h2 style="font-size:16px">阶段二 · 包 / 进程 / Activity / 四大组件</h2></div>
+  <div class="grid">
+    <div class="card" style="--b:var(--c-core)">
+      <div class="h"><h3>PMS PackageManagerService</h3><span class="num">04</span></div>
+      <div class="svc"><b>核心：</b>PackageManagerService · 安装/卸载 · Intent 解析 · 权限 · 签名</div>
+      <div class="sum">系统"有哪些包、哪些组件"的事实来源。</div>
+      <div class="links">衔接 → <a href="14_权限机制详解-从Permission到AppOps.md">14 权限</a> · <a href="05_AMS机制详解-从App现象理解系统调度.md">05 AMS</a> · <a href="../androidOthers/Android构建系统详解-从Soong到AOSP整机集成.md">构建</a> · <a href="../androidOthers/AndroidCTS与VTS认证详解-从兼容性测试到量产准入.md">CTS/VTS</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-core)">
+      <div class="h"><h3>AMS ActivityManagerService</h3><span class="num">05/06</span></div>
+      <div class="svc"><b>核心：</b>ActivityManagerService · ProcessRecord · startProcess · OOM adj · ANR</div>
+      <div class="sum">应用进程与组件运行状态的总调度中心。</div>
+      <div class="links">衔接 → <a href="07_Service机制详解-从startService到bindService和前台服务.md">07 Service</a> · <a href="08_Broadcast机制详解-从sendBroadcast到广播队列分发.md">08 广播</a> · <a href="09_ContentProvider机制详解-从ContentResolver到跨进程数据访问.md">09 Provider</a> · <a href="10_ATMS机制详解-从startActivity到任务栈调度.md">10 ATMS</a> · <a href="19_多用户机制详解-从UserManager到DevicePolicy.md">19 多用户</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-core)">
+      <div class="h"><h3>ATMS ActivityTaskManagerService</h3><span class="num">10</span></div>
+      <div class="svc"><b>核心：</b>ATMS · ActivityStarter · Task · ActivityRecord · ClientTransaction · launchMode</div>
+      <div class="sum">专门管 Activity/Task/启动模式/生命周期事务，AMS 的姊妹篇。</div>
+      <div class="links">衔接 → <a href="05_AMS机制详解-从App现象理解系统调度.md">05 AMS</a> · <a href="11_WMS机制详解-从窗口添加到显示管理.md">11 WMS</a> · <a href="23_多屏与多窗口机制详解-从DisplayManager到CarOccupantZone.md">23 多屏</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-core)">
+      <div class="h"><h3>Service 机制</h3><span class="num">07</span></div>
+      <div class="svc"><b>核心：</b>ServiceRecord · startService · bindService · 前台服务 · foregroundServiceType</div>
+      <div class="sum">后台执行与跨进程绑定；前台服务决定生死。</div>
+      <div class="links">衔接 → <a href="05_AMS机制详解-从App现象理解系统调度.md">05 AMS</a> · <a href="17_通知机制详解-从NotificationManagerService到SystemUI展示.md">17 通知</a> · <a href="16_后台任务机制详解-从Alarm到JobScheduler.md">16 后台</a> · <a href="14_权限机制详解-从Permission到AppOps.md">14 权限</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-core)">
+      <div class="h"><h3>Broadcast 广播</h3><span class="num">08</span></div>
+      <div class="svc"><b>核心：</b>BroadcastQueue · 动态/静态注册 · 有序/并行 · 隐式限制</div>
+      <div class="sum">系统事件分发；静态接收者可拉起进程。</div>
+      <div class="links">衔接 → <a href="05_AMS机制详解-从App现象理解系统调度.md">05/06 AMS</a> · <a href="17_通知机制详解-从NotificationManagerService到SystemUI展示.md">17 通知</a> · <a href="16_后台任务机制详解-从Alarm到JobScheduler.md">16 后台</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-core)">
+      <div class="h"><h3>ContentProvider</h3><span class="num">09</span></div>
+      <div class="svc"><b>核心：</b>ContentResolver · IContentProvider · Transport · Cursor 窗口化 · ContentObserver</div>
+      <div class="sum">跨进程数据访问；Provider 安装早于 Application。</div>
+      <div class="links">衔接 → <a href="02_Binder机制详解-从AIDL到Framework.md">02 Binder</a> · <a href="05_AMS机制详解-从App现象理解系统调度.md">05/06 AMS</a> · <a href="19_多用户机制详解-从UserManager到DevicePolicy.md">19 多用户</a></div>
+    </div>
+  </div>
+
+  <!-- 阶段三：显示/输入/渲染 -->
+  <div class="section" style="margin:26px 0 8px"><h2 style="font-size:16px">阶段三 · 窗口 / 显示 / 输入 / 渲染</h2></div>
+  <div class="grid">
+    <div class="card" style="--b:var(--c-display)">
+      <div class="h"><h3>WMS WindowManagerService</h3><span class="num">11</span></div>
+      <div class="svc"><b>核心：</b>WindowState · Window token · 层级/焦点 · Insets · BadToken</div>
+      <div class="sum">单屏内窗口秩序的管理者。</div>
+      <div class="links">衔接 → <a href="10_ATMS机制详解-从startActivity到任务栈调度.md">10 ATMS</a> · <a href="12_SurfaceFlinger机制详解-从Buffer到屏幕合成.md">12 SF</a> · <a href="13_Input机制详解-从触摸事件到InputDispatcher分发.md">13 Input</a> · <a href="23_多屏与多窗口机制详解-从DisplayManager到CarOccupantZone.md">23 多屏</a> · <a href="18_SystemUI机制详解-从状态栏到锁屏与通知面板.md">18 SystemUI</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-display)">
+      <div class="h"><h3>SurfaceFlinger</h3><span class="num">12</span></div>
+      <div class="svc"><b>核心：</b>Layer · BufferQueue · VSYNC · HWC · SurfaceControl · Transaction</div>
+      <div class="sum">所有 Layer 的合成与最终上屏。</div>
+      <div class="links">衔接 → <a href="11_WMS机制详解-从窗口添加到显示管理.md">11 WMS</a> · <a href="22_图形渲染机制详解-从HWUI到GPU上屏.md">22 渲染</a> · <a href="20_相机与媒体编解码详解-从CameraHAL到MediaCodec与上屏.md">20 相机/媒体</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-display)">
+      <div class="h"><h3>图形渲染 HWUI→GPU</h3><span class="num">22</span></div>
+      <div class="svc"><b>核心：</b>RenderThread · DisplayList · Skia(GL/Vulkan) · Choreographer · 三级缓冲</div>
+      <div class="sum">绘制端：App 的绘制指令如何变成 GPU 命令。</div>
+      <div class="links">衔接 → <a href="12_SurfaceFlinger机制详解-从Buffer到屏幕合成.md">12 SF</a> · <a href="03_消息机制详解-从Looper到Handler和Choreographer.md">03 消息</a> · <a href="13_Input机制详解-从触摸事件到InputDispatcher分发.md">13 Input</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-display)">
+      <div class="h"><h3>Input 输入分发</h3><span class="num">13</span></div>
+      <div class="svc"><b>核心：</b>InputManagerService · InputReader · InputDispatcher · InputChannel · 输入 ANR</div>
+      <div class="sum">触摸/按键如何送到正确窗口。</div>
+      <div class="links">衔接 → <a href="11_WMS机制详解-从窗口添加到显示管理.md">11 WMS</a> · <a href="03_消息机制详解-从Looper到Handler和Choreographer.md">03 消息</a> · <a href="23_多屏与多窗口机制详解-从DisplayManager到CarOccupantZone.md">23 多屏</a> · <a href="22_图形渲染机制详解-从HWUI到GPU上屏.md">22 渲染</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-display)">
+      <div class="h"><h3>多屏与多窗口 DisplayManager</h3><span class="num">23</span></div>
+      <div class="svc"><b>核心：</b>DisplayManager · DisplayContent · VirtualDisplay · OccupantZone · TaskOrganizer</div>
+      <div class="sum">屏↔窗口↔用户↔座舱的多维编排，车机多屏核心。</div>
+      <div class="links">衔接 → <a href="11_WMS机制详解-从窗口添加到显示管理.md">11 WMS</a> · <a href="10_ATMS机制详解-从startActivity到任务栈调度.md">10 ATMS</a> · <a href="13_Input机制详解-从触摸事件到InputDispatcher分发.md">13 Input</a> · <a href="18_SystemUI机制详解-从状态栏到锁屏与通知面板.md">18 SystemUI</a> · <a href="19_多用户机制详解-从UserManager到DevicePolicy.md">19 多用户</a> · <a href="../automotive/01-AAOS整体架构与CarService.md">automotive/01</a></div>
+    </div>
+  </div>
+
+  <!-- 阶段四：权限/后台/功耗/媒体 -->
+  <div class="section" style="margin:26px 0 8px"><h2 style="font-size:16px">阶段四 · 权限 / 后台 / 电源 / 系统UI / 媒体</h2></div>
+  <div class="grid">
+    <div class="card" style="--b:var(--c-core)">
+      <div class="h"><h3>Permission / AppOps</h3><span class="num">14</span></div>
+      <div class="svc"><b>核心：</b>权限判定(DAC) · AppOps · auto-revoke · App Standby bucket</div>
+      <div class="sum">"有权限为什么还不能用"。</div>
+      <div class="links">衔接 → <a href="04_PMS机制详解-从App列表到安装卸载流程.md">04 PMS</a> · <a href="16_后台任务机制详解-从Alarm到JobScheduler.md">16 后台</a> · <a href="../androidOthers/AndroidSELinux机制详解-从策略到系统加固.md">SELinux(MAC互补)</a> · <a href="20_相机与媒体编解码详解-从CameraHAL到MediaCodec与上屏.md">20 相机</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-core)">
+      <div class="h"><h3>Power 电源/Doze</h3><span class="num">15</span></div>
+      <div class="svc"><b>核心：</b>PowerManagerService · WakeLock · SuspendBlocker · Doze 状态机 · BatteryService</div>
+      <div class="sum">亮灭屏、休眠、省电状态机。</div>
+      <div class="links">衔接 → <a href="16_后台任务机制详解-从Alarm到JobScheduler.md">16 后台</a> · <a href="18_SystemUI机制详解-从状态栏到锁屏与通知面板.md">18 SystemUI</a> · <a href="17_通知机制详解-从NotificationManagerService到SystemUI展示.md">17 通知</a> · <a href="23_多屏与多窗口机制详解-从DisplayManager到CarOccupantZone.md">23 多屏</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-core)">
+      <div class="h"><h3>后台任务 Alarm/JobScheduler</h3><span class="num">16</span></div>
+      <div class="svc"><b>核心：</b>AlarmManagerService · JobScheduler · StateController · WorkManager 落点 · bucket</div>
+      <div class="sum">后台任务为什么不执行。</div>
+      <div class="links">衔接 → <a href="15_Power机制详解-从WakeLock到Doze后台限制.md">15 Power</a> · <a href="07_Service机制详解-从startService到bindService和前台服务.md">07 Service</a> · <a href="08_Broadcast机制详解-从sendBroadcast到广播队列分发.md">08 广播</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-core)">
+      <div class="h"><h3>NMS 通知</h3><span class="num">17</span></div>
+      <div class="svc"><b>核心：</b>NotificationManagerService · Channel · importance · Ranking · DND</div>
+      <div class="sum">通知的裁决链与响铃震动。</div>
+      <div class="links">衔接 → <a href="18_SystemUI机制详解-从状态栏到锁屏与通知面板.md">18 SystemUI</a> · <a href="07_Service机制详解-从startService到bindService和前台服务.md">07 Service</a> · <a href="15_Power机制详解-从WakeLock到Doze后台限制.md">15 Power</a> · <a href="19_多用户机制详解-从UserManager到DevicePolicy.md">19 多用户</a> · <a href="21_Audio机制详解-从AudioTrack到AudioFlinger和AudioPolicy.md">21 Audio</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-core)">
+      <div class="h"><h3>SystemUI</h3><span class="num">18</span></div>
+      <div class="svc"><b>核心：</b>StatusBar · NotifPipeline · Keyguard · CarSystemUIFactory · per-display</div>
+      <div class="sum">状态栏/导航栏/锁屏/通知面板的呈现端。</div>
+      <div class="links">衔接 → <a href="01_Android启动流程详解-从init到Zygote和SystemServer.md">01 启动</a> · <a href="17_通知机制详解-从NotificationManagerService到SystemUI展示.md">17 通知</a> · <a href="15_Power机制详解-从WakeLock到Doze后台限制.md">15 Power</a> · <a href="23_多屏与多窗口机制详解-从DisplayManager到CarOccupantZone.md">23 多屏</a> · <a href="19_多用户机制详解-从UserManager到DevicePolicy.md">19 多用户</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-core)">
+      <div class="h"><h3>多用户 UserManager/DevicePolicy</h3><span class="num">19</span></div>
+      <div class="svc"><b>核心：</b>UserManagerService · userId · CE/DE · DPMS · OccupantZone绑定 · CarUserService</div>
+      <div class="sum">用户隔离、设备管理、车机多驾驶员账户。</div>
+      <div class="links">衔接 → <a href="23_多屏与多窗口机制详解-从DisplayManager到CarOccupantZone.md">23 多屏</a> · <a href="18_SystemUI机制详解-从状态栏到锁屏与通知面板.md">18 SystemUI</a> · <a href="05_AMS机制详解-从App现象理解系统调度.md">05 AMS</a> · <a href="14_权限机制详解-从Permission到AppOps.md">14 权限</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-display)">
+      <div class="h"><h3>相机 / 媒体编解码</h3><span class="num">20</span></div>
+      <div class="svc"><b>核心：</b>Camera2/X · CameraService · CameraHAL3 · MediaCodec/Codec2 · Media3</div>
+      <div class="sum">一帧图/一段视频的完整流水线。</div>
+      <div class="links">衔接 → <a href="21_Audio机制详解-从AudioTrack到AudioFlinger和AudioPolicy.md">21 Audio</a> · <a href="12_SurfaceFlinger机制详解-从Buffer到屏幕合成.md">12 SF</a> · <a href="13_Input机制详解-从触摸事件到InputDispatcher分发.md">13 Input</a> · <a href="14_权限机制详解-从Permission到AppOps.md">14 权限</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-display)">
+      <div class="h"><h3>Audio 音频</h3><span class="num">21</span></div>
+      <div class="svc"><b>核心：</b>AudioTrack · AudioFlinger · AudioPolicy · 混音 · 焦点 · 路由</div>
+      <div class="sum">播放/录音/混音/焦点/音量/路由。</div>
+      <div class="links">衔接 → <a href="20_相机与媒体编解码详解-从CameraHAL到MediaCodec与上屏.md">20 相机/媒体</a> · <a href="18_SystemUI机制详解-从状态栏到锁屏与通知面板.md">18 SystemUI</a> · <a href="../automotive/01-AAOS整体架构与CarService.md">CarAudioService</a></div>
+    </div>
+  </div>
+
+  <!-- androidOthers 网络 -->
+  <div class="section" style="margin:26px 0 8px"><h2 style="font-size:16px">androidOthers · 系统篇（支撑 framework 的底层）</h2></div>
+  <div class="grid">
+    <div class="card" style="--b:var(--c-sys)">
+      <div class="h"><h3>启动与属性系统 init.rc</h3><span class="num">others</span></div>
+      <div class="svc"><b>核心：</b>init 两阶段 · init.rc · 属性服务 · class · SELinux 衔接</div>
+      <div class="sum">01 篇的姊妹篇，站在 init 自身视角。</div>
+      <div class="links">衔接 → <a href="01_Android启动流程详解-从init到Zygote和SystemServer.md">01 启动</a> · <a href="../androidOthers/Android存储机制详解-从分区到ScopedStorage与多用户.md">存储</a> · <a href="../androidOthers/Android构建系统详解-从Soong到AOSP整机集成.md">构建</a> · <a href="../androidOthers/AndroidSELinux机制详解-从策略到系统加固.md">SELinux</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-sys)">
+      <div class="h"><h3>SELinux</h3><span class="num">others</span></div>
+      <div class="svc"><b>核心：</b>MAC · te 策略 · neverallow · 域</div>
+      <div class="sum">系统加固的 MAC 侧，与 14 篇 DAC 互补。</div>
+      <div class="links">衔接 → <a href="14_权限机制详解-从Permission到AppOps.md">14 权限(DAC互补)</a> · <a href="../androidOthers/AndroidNDK与JNI详解-从跨语言调用到so加载与Native崩溃排查.md">NDK</a> · <a href="../automotive/03-VehicleHAL-VHAL详解.md">VHAL</a> · <a href="../androidOthers/Android车载总线详解-从CAN到SOME-IP与车辆网络.md">车载总线</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-sys)">
+      <div class="h"><h3>构建系统 Soong</h3><span class="num">others</span></div>
+      <div class="svc"><b>核心：</b>Soong · Android.bp · 分区 · VNDK/LLNDK · dm-verity</div>
+      <div class="sum">镜像怎么被 build 出来（存储篇讲镜像怎么只读）。</div>
+      <div class="links">衔接 → <a href="01_Android启动流程详解-从init到Zygote和SystemServer.md">01 启动</a> · <a href="04_PMS机制详解-从App列表到安装卸载流程.md">04 PMS</a> · <a href="../androidOthers/Android存储机制详解-从分区到ScopedStorage与多用户.md">存储</a> · <a href="../androidOthers/AndroidNDK与JNI详解-从跨语言调用到so加载与Native崩溃排查.md">NDK</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-sys)">
+      <div class="h"><h3>存储 ScopedStorage</h3><span class="num">others</span></div>
+      <div class="svc"><b>核心：</b>分区 · dm-verity · CE/DE · ScopedStorage · 多用户</div>
+      <div class="sum">持久化与 /data 解密的时序基础。</div>
+      <div class="links">衔接 → <a href="../androidOthers/Android开发者网络串讲-从WiFi到HTTP.md">网络</a> · <a href="../androidOthers/Android蓝牙机制详解-从跳频到GATT与车机互联.md">蓝牙</a> · <a href="../androidOthers/AndroidOTA机制详解-从A-B更新到回滚与GSI.md">OTA</a> · <a href="19_多用户机制详解-从UserManager到DevicePolicy.md">19 多用户</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-sys)">
+      <div class="h"><h3>NDK / JNI</h3><span class="num">others</span></div>
+      <div class="svc"><b>核心：</b>JNI · so 加载 · Native 崩溃 · VNDK/LLNDK</div>
+      <div class="sum">跨语言调用的 native 侧机制。</div>
+      <div class="links">衔接 → <a href="02_Binder机制详解-从AIDL到Framework.md">02 Binder</a> · <a href="../androidOthers/Android虚拟机详解-从Dalvik到ART与代码形态演变.md">虚拟机</a> · <a href="../androidOthers/AndroidSELinux机制详解-从策略到系统加固.md">SELinux</a> · <a href="21_Audio机制详解-从AudioTrack到AudioFlinger和AudioPolicy.md">21 Audio(AAudio)</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-sys)">
+      <div class="h"><h3>网络 / 蓝牙</h3><span class="num">others</span></div>
+      <div class="svc"><b>核心：</b>ConnectivityService · WiFi · HTTP · GATT · 车机互联</div>
+      <div class="sum">连接与协议栈；蓝牙与网络互为姊妹篇。</div>
+      <div class="links">衔接 → <a href="../androidOthers/Android存储机制详解-从分区到ScopedStorage与多用户.md">存储</a> · 彼此互引</div>
+    </div>
+    <div class="card" style="--b:var(--c-sys)">
+      <div class="h"><h3>CTS / VTS 认证</h3><span class="num">others</span></div>
+      <div class="svc"><b>核心：</b>兼容性测试 · VTS/HAL · 量产准入 · privapp 白名单</div>
+      <div class="sum">量产准入门槛。</div>
+      <div class="links">衔接 → <a href="04_PMS机制详解-从App列表到安装卸载流程.md">04 PMS</a> · <a href="14_权限机制详解-从Permission到AppOps.md">14 权限</a> · <a href="../androidOthers/Android构建系统详解-从Soong到AOSP整机集成.md">构建</a> · <a href="../automotive/03-VehicleHAL-VHAL详解.md">VHAL</a> · <a href="../androidOthers/AndroidOTA机制详解-从A-B更新到回滚与GSI.md">OTA</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-sys)">
+      <div class="h"><h3>OTA 更新</h3><span class="num">others</span></div>
+      <div class="svc"><b>核心：</b>A/B 更新 · 回滚 · GSI · dm-verity · HAL 版本</div>
+      <div class="sum">升级后 framework/HAL 一致性。</div>
+      <div class="links">衔接 → <a href="04_PMS机制详解-从App列表到安装卸载流程.md">04 PMS</a> · <a href="../androidOthers/AndroidSELinux机制详解-从策略到系统加固.md">SELinux</a> · <a href="../androidOthers/Android存储机制详解-从分区到ScopedStorage与多用户.md">存储</a> · <a href="../automotive/03-VehicleHAL-VHAL详解.md">VHAL(IGNITION_STATE)</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-sys)">
+      <div class="h"><h3>车载总线 CAN / SOME-IP</h3><span class="num">others</span></div>
+      <div class="svc"><b>核心：</b>CAN · DBC · SOME-IP · SocketCAN · 总线↔VHAL</div>
+      <div class="sum">车辆信号的来源，VHAL 的数据供给。</div>
+      <div class="links">衔接 → <a href="../automotive/03-VehicleHAL-VHAL详解.md">automotive/03 VHAL</a> · <a href="../androidOthers/AndroidSELinux机制详解-从策略到系统加固.md">SELinux</a> · <a href="../androidOthers/AndroidOTA机制详解-从A-B更新到回滚与GSI.md">OTA</a></div>
+    </div>
+  </div>
+
+  <!-- automotive -->
+  <div class="section" style="margin:26px 0 8px"><h2 style="font-size:16px">automotive · 车载篇（AAOS 扩展）</h2></div>
+  <div class="grid">
+    <div class="card" style="--b:var(--c-car)">
+      <div class="h"><h3>AAOS 架构与 CarService</h3><span class="num">car/01</span></div>
+      <div class="svc"><b>核心：</b>CarService · CarUserService · CarOccupantZoneService · Vehicle 主线</div>
+      <div class="sum">车载新增的核心层及其子服务。</div>
+      <div class="links">衔接 → <a href="../automotive/03-VehicleHAL-VHAL详解.md">car/03 VHAL</a> · <a href="23_多屏与多窗口机制详解-从DisplayManager到CarOccupantZone.md">23 多屏</a> · <a href="19_多用户机制详解-从UserManager到DevicePolicy.md">19 多用户</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-car)">
+      <div class="h"><h3>CarPropertyManager / VehicleProperty</h3><span class="num">car/02</span></div>
+      <div class="svc"><b>核心：</b>CarPropertyManager · propertyId · areaId · access · changeMode</div>
+      <div class="sum">车辆能力抽象成 Property。</div>
+      <div class="links">衔接 → <a href="../automotive/03-VehicleHAL-VHAL详解.md">car/03 VHAL</a> · <a href="../automotive/05-车控业务实战-HVAC车门车速档位.md">car/05 实战</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-car)">
+      <div class="h"><h3>VHAL Vehicle HAL</h3><span class="num">car/03</span></div>
+      <div class="svc"><b>核心：</b>VHAL · get/set/subscribe · 标准/Vendor 属性 · FakeVHAL</div>
+      <div class="sum">车辆属性 HAL 的接口契约。</div>
+      <div class="links">衔接 → <a href="../androidOthers/Android车载总线详解-从CAN到SOME-IP与车辆网络.md">车载总线</a> · <a href="../androidOthers/AndroidSELinux机制详解-从策略到系统加固.md">SELinux</a> · <a href="../androidOthers/AndroidOTA机制详解-从A-B更新到回滚与GSI.md">OTA(IGNITION_STATE)</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-car)">
+      <div class="h"><h3>车控业务实战</h3><span class="num">car/05</span></div>
+      <div class="svc"><b>核心：</b>HVAC · 车门 · 车速 · 档位 · Repository</div>
+      <div class="sum">从 VHAL 属性到 App 车控 UI 的落地。</div>
+      <div class="links">衔接 → <a href="../automotive/02-CarPropertyManager与VehicleProperty.md">car/02</a> · <a href="../automotive/03-VehicleHAL-VHAL详解.md">car/03</a> · <a href="../androidApp/05-App架构-MVVM-MVI-Repository.md">androidApp MVVM</a></div>
+    </div>
+    <div class="card" style="--b:var(--c-car)">
+      <div class="h"><h3>FakeVHAL / 新增属性实战</h3><span class="num">car/06·08</span></div>
+      <div class="svc"><b>核心：</b>FakeVHAL · 模拟器 · types.hal · VehiclePropValue</div>
+      <div class="sum">调试环境与从 HAL 到 App 的完整新增链路。</div>
+      <div class="links">衔接 → <a href="../automotive/03-VehicleHAL-VHAL详解.md">car/03</a> · <a href="../androidOthers/AndroidCTS与VTS认证详解-从兼容性测试到量产准入.md">CTS/VTS</a></div>
+    </div>
+  </div>
+
+  <!-- ================= 4. 四阶段路线 ================= -->
+  <div class="section"><h2>④ 四阶段学习路线</h2><span class="tag">引自学习顺序推荐</span></div>
+  <p class="hint">从"系统怎么启动、服务怎么通信"起步，到"窗口/显示/输入"，再到"权限/后台/电源"，最后是"系统UI/多用户/媒体"。</p>
+  <div class="chain">
+    <div class="title">▸ <b>阶段一 · 启动 / 跨进程 / 线程</b>：<a href="01_Android启动流程详解-从init到Zygote和SystemServer.md">01 启动</a> → <a href="02_Binder机制详解-从AIDL到Framework.md">02 Binder</a> → <a href="03_消息机制详解-从Looper到Handler和Choreographer.md">03 消息</a></div>
+    <div class="title">▸ <b>阶段二 · 包 / 进程 / 四大组件</b>：<a href="04_PMS机制详解-从App列表到安装卸载流程.md">04 PMS</a> → <a href="05_AMS机制详解-从App现象理解系统调度.md">05/06 AMS</a> → <a href="10_ATMS机制详解-从startActivity到任务栈调度.md">10 ATMS</a> → <a href="07_Service机制详解-从startService到bindService和前台服务.md">07 Service</a> · <a href="08_Broadcast机制详解-从sendBroadcast到广播队列分发.md">08 广播</a> · <a href="09_ContentProvider机制详解-从ContentResolver到跨进程数据访问.md">09 Provider</a></div>
+    <div class="title">▸ <b>阶段三 · 窗口 / 显示 / 输入 / 渲染</b>：<a href="11_WMS机制详解-从窗口添加到显示管理.md">11 WMS</a> → <a href="12_SurfaceFlinger机制详解-从Buffer到屏幕合成.md">12 SF</a> → <a href="22_图形渲染机制详解-从HWUI到GPU上屏.md">22 渲染</a> → <a href="13_Input机制详解-从触摸事件到InputDispatcher分发.md">13 Input</a> → <a href="23_多屏与多窗口机制详解-从DisplayManager到CarOccupantZone.md">23 多屏</a></div>
+    <div class="title">▸ <b>阶段四 · 权限 / 后台 / 电源 / UI / 媒体</b>：<a href="14_权限机制详解-从Permission到AppOps.md">14 权限</a> → <a href="15_Power机制详解-从WakeLock到Doze后台限制.md">15 Power</a> → <a href="16_后台任务机制详解-从Alarm到JobScheduler.md">16 后台</a> → <a href="17_通知机制详解-从NotificationManagerService到SystemUI展示.md">17 通知</a> → <a href="18_SystemUI机制详解-从状态栏到锁屏与通知面板.md">18 SystemUI</a> → <a href="19_多用户机制详解-从UserManager到DevicePolicy.md">19 多用户</a> → <a href="20_相机与媒体编解码详解-从CameraHAL到MediaCodec与上屏.md">20 相机</a> · <a href="21_Audio机制详解-从AudioTrack到AudioFlinger和AudioPolicy.md">21 Audio</a></div>
+  </div>
+
+  <!-- ================= 5. 按问题反查 ================= -->
+  <div class="section"><h2>⑤ 按问题反查该看什么</h2><span class="tag">排查速查表</span></div>
+  <p class="hint">遇到真实问题时，从现象定位到机制与文档。</p>
+  <table>
+    <thead><tr><th style="width:44%">现象 / 问题</th><th>优先看（机制 · 文档）</th></tr></thead>
+    <tbody>
+      <tr><td>App 装不上、卸不掉</td><td>PMS · <span class="p">04</span></td></tr>
+      <tr><td>Intent 找不到 Activity</td><td>PMS + ATMS · <span class="p">04 · 10</span></td></tr>
+      <tr><td>Activity 启动慢</td><td>ATMS + AMS + WMS · <span class="p">10 · 05 · 11</span></td></tr>
+      <tr><td>返回栈异常</td><td>ATMS · <span class="p">10</span></td></tr>
+      <tr><td>Service 起不来</td><td>Service + AMS + Power · <span class="p">07 · 05 · 15</span></td></tr>
+      <tr><td>前台服务异常</td><td>Service + AMS + 通知 + 权限 · <span class="p">07 · 05 · 17 · 14</span></td></tr>
+      <tr><td>广播收不到</td><td>广播 + AMS + PMS + 多用户 · <span class="p">08 · 05 · 04 · 19</span></td></tr>
+      <tr><td>Provider 查询慢</td><td>ContentProvider + AMS · <span class="p">09 · 05</span></td></tr>
+      <tr><td>FileProvider 分享失败</td><td>ContentProvider + 权限 · <span class="p">09 · 14</span></td></tr>
+      <tr><td>App 被杀</td><td>AMS + OOM + LMKD · <span class="p">05</span></td></tr>
+      <tr><td>Dialog 报 BadToken</td><td>WMS · <span class="p">11</span></td></tr>
+      <tr><td>窗口不显示</td><td>WMS + SurfaceFlinger · <span class="p">11 · 12</span></td></tr>
+      <tr><td>黑屏/花屏/掉帧</td><td>SurfaceFlinger + HWC + App 渲染 · <span class="p">12 · 22</span></td></tr>
+      <tr><td>点击无响应</td><td>Input + WMS + ANR · <span class="p">13 · 11</span></td></tr>
+      <tr><td>主线程卡顿 / ANR</td><td>消息机制 + AMS/ATMS/Input · <span class="p">03 · 05/10 · 13</span></td></tr>
+      <tr><td>有权限但功能不可用</td><td>权限 + AppOps · <span class="p">14</span></td></tr>
+      <tr><td>后台任务不执行</td><td>Power + Alarm + JobScheduler + AMS · <span class="p">15 · 16 · 05</span></td></tr>
+      <tr><td>通知不显示</td><td>通知 + 权限 + SystemUI · <span class="p">17 · 14 · 18</span></td></tr>
+      <tr><td>锁屏/状态栏/导航栏异常</td><td>SystemUI + WMS · <span class="p">18 · 11</span></td></tr>
+      <tr><td>多用户下 App 不见</td><td>PMS + UserManager · <span class="p">04 · 19</span></td></tr>
+      <tr><td>应用卸载不了</td><td>PMS + DevicePolicy · <span class="p">04 · 19</span></td></tr>
+      <tr><td>视频有声无画</td><td>Media + SurfaceFlinger + HWC · <span class="p">20 · 12</span></td></tr>
+      <tr><td>开机慢 / 开机广播异常</td><td>启动流程 + PMS + AMS + 广播 · <span class="p">01 · 04 · 05 · 08</span></td></tr>
+      <tr><td>车机副驾屏 App/通知归属错</td><td>多屏 OccupantZone + 多用户 + SystemUI · <span class="p">23 · 19 · 18</span></td></tr>
+      <tr><td>车控属性读不到 / 不生效</td><td>VHAL + 总线 + 权限 · <span class="p">car/03 · others总线 · 14</span></td></tr>
+    </tbody>
+  </table>
+
+  <p class="tip">📌 提示：本页所有"衔接/→"都是文档里真实存在的交叉引用整理而成。文件命名规则 <code>NN_主题-子主题.md</code>，编号即学习阶段顺序。此地图可作目录页，配合 <a href="AndroidFramework学习顺序推荐.md">学习顺序推荐.md</a> 使用。</p>
+
+</div>
+</body>
+</html>
